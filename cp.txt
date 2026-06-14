@@ -1,0 +1,1 @@
+D:\maven\repository\org\b3log\latke-core\3.4.30\latke-core-3.4.30.jar;D:\maven\repository\org\b3log\latke-repository-mysql\3.4.30\latke-repository-mysql-3.4.30.jar;D:\maven\repository\org\b3log\latke-repository-h2\3.4.30\latke-repository-h2-3.4.30.jar
