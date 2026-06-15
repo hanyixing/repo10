@@ -27,11 +27,11 @@
     </Appenders>
 
     <Loggers>
-        <Root level="Info">
+        <Root level="${env:SOLO_LOG_LEVEL:-Info}">
             <AppenderRef ref="Console"/>
         </Root>
 
-        <Logger name="org.b3log.solo" level="Info"/>
+        <Logger name="org.b3log.solo" level="${env:SOLO_LOG_LEVEL:-Info}"/>
         <Logger name="org.b3log.latke" level="Warn"/>
         <Logger name="org.b3log.latke.util.freemarker.Templates" level="Error"/>
         <Logger name="org.b3log.latke.repository.jdbc.util" level="WARN"/>

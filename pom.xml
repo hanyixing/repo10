@@ -237,6 +237,13 @@
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
 
@@ -381,6 +388,52 @@
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
+            <properties>
+                <solo.env>dev</solo.env>
+                <solo.runtimeMode>DEVELOPMENT</solo.runtimeMode>
+            </properties>
+            <repositories>
+                <repository>
+                    <id>aliyun</id>
+                    <url>https://maven.aliyun.com/nexus/content/groups/public</url>
+                </repository>
+            </repositories>
+
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>aliyun</id>
+                    <url>https://maven.aliyun.com/nexus/content/groups/public</url>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+
+        <profile>
+            <id>test</id>
+            <properties>
+                <solo.env>test</solo.env>
+                <solo.runtimeMode>DEVELOPMENT</solo.runtimeMode>
+            </properties>
+            <repositories>
+                <repository>
+                    <id>aliyun</id>
+                    <url>https://maven.aliyun.com/nexus/content/groups/public</url>
+                </repository>
+            </repositories>
+
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>aliyun</id>
+                    <url>https://maven.aliyun.com/nexus/content/groups/public</url>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+
+        <profile>
+            <id>prod</id>
+            <properties>
+                <solo.env>prod</solo.env>
+                <solo.runtimeMode>PRODUCTION</solo.runtimeMode>
+            </properties>
             <repositories>
                 <repository>
                     <id>aliyun</id>

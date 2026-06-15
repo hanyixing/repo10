@@ -1,0 +1,102 @@
+# =============================================================================
+# Solo - MySQL + blog service orchestration
+# -----------------------------------------------------------------------------
+# Defaults below make `docker compose up` work out-of-the-box on localhost.
+# Override per environment via a `.env` file (see .env.example) or generate one
+# with `./deploy.sh <dev|test|prod> up`. Every ${VAR:-default} has a sensible
+# fallback, so `docker compose config` validates even without a `.env`.
+# =============================================================================
+
+services:
+  mysql:
+    image: ${MYSQL_IMAGE:-mysql:8.0}
+    container_name: ${MYSQL_CONTAINER:-solo-mysql}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-solo-dev}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-solo}
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - solo-net
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: ${SOLO_RESTART:-unless-stopped}
+    deploy:
+      resources:
+        limits:
+          cpus: "${MYSQL_CPU_LIMIT:-1.0}"
+          memory: ${MYSQL_MEM_LIMIT:-512m}
+        reservations:
+          memory: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: ${LOG_MAX_SIZE:-10m}
+        max-file: "${LOG_MAX_FILE:-3}"
+
+  solo:
+    image: ${SOLO_IMAGE:-b3log/solo:latest}
+    build:
+      context: .
+      args:
+        git_commit: ${GIT_COMMIT:-0}
+    container_name: ${SOLO_CONTAINER:-solo}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      RUNTIME_DB: ${RUNTIME_DB:-MYSQL}
+      JDBC_USERNAME: ${JDBC_USERNAME:-root}
+      JDBC_PASSWORD: ${JDBC_PASSWORD:-solo-dev}
+      JDBC_DRIVER: ${JDBC_DRIVER:-com.mysql.cj.jdbc.Driver}
+      JDBC_URL: ${JDBC_URL:-jdbc:mysql://mysql:3306/solo?useUnicode=yes&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+      JDBC_MIN_CONNS: ${JDBC_MIN_CONNS:-5}
+      JDBC_MAX_CONNS: ${JDBC_MAX_CONNS:-10}
+      JDBC_TABLE_PREFIX: ${JDBC_TABLE_PREFIX:-b3_solo}
+      JAVA_OPTS: ${JAVA_OPTS:--Xms256m -Xmx512m}
+      SOLO_LOG_LEVEL: ${SOLO_LOG_LEVEL:-Info}
+      SERVER_PORT: "8080"
+      TZ: Asia/Shanghai
+    command:
+      - --listen_port=8080
+      - --server_scheme=${SERVER_SCHEME:-http}
+      - --server_host=${SERVER_HOST:-localhost}
+    ports:
+      - "${SOLO_HOST_PORT:-8080}:8080"
+    networks:
+      - solo-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/manifest.json || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    restart: ${SOLO_RESTART:-unless-stopped}
+    deploy:
+      resources:
+        limits:
+          cpus: "${SOLO_CPU_LIMIT:-1.0}"
+          memory: ${SOLO_MEM_LIMIT:-512m}
+        reservations:
+          memory: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: ${LOG_MAX_SIZE:-10m}
+        max-file: "${LOG_MAX_FILE:-3}"
+
+networks:
+  solo-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local

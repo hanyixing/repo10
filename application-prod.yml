@@ -1,0 +1,59 @@
+# =============================================================================
+# Solo - PRODUCTION environment configuration
+# -----------------------------------------------------------------------------
+# Source of truth for the `prod` environment. Consumed by ./deploy.sh.
+#
+# SECRETS ARE NOT STORED HERE. Password fields use ${ENV_VAR} placeholders that
+# deploy.sh resolves from the shell environment at deploy time, so this file is
+# safe to commit. deploy.sh refuses to deploy prod unless the referenced secrets
+# are exported and are not left at weak/default values.
+#
+#   export JDBC_PASSWORD='...'         # Solo -> MySQL password
+#   export MYSQL_ROOT_PASSWORD='...'   # MySQL root password (usually the same)
+#
+# MUST EDIT before going live: server.host (and server.scheme if behind TLS).
+# Format: strict 2-level "section -> key: value" so deploy.sh can parse it.
+# =============================================================================
+
+server:
+  scheme: https                    # public scheme (set http if no TLS proxy)
+  host: your-domain.com            # <-- CHANGE ME to your real domain
+  port: 8080                       # host port (typically proxied by nginx/TLS)
+  runtimeMode: PRODUCTION
+
+database:
+  runtimeDb: MYSQL
+  driver: com.mysql.cj.jdbc.Driver
+  username: root
+  password: ${JDBC_PASSWORD}       # resolved from env by deploy.sh
+  host: mysql
+  port: 3306
+  name: solo
+  url: "jdbc:mysql://mysql:3306/solo?useUnicode=yes&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+  minConns: 10
+  maxConns: 20
+  tablePrefix: b3_solo
+
+jvm:
+  javaOpts: "-Xms512m -Xmx1024m"
+
+logging:
+  level: INFO
+
+solo:
+  image: "b3log/solo:latest"
+  containerName: solo
+  memoryLimit: 1024m
+  cpuLimit: "2.0"
+  restartPolicy: always
+
+mysql:
+  image: "mysql:8.0"
+  rootPassword: ${MYSQL_ROOT_PASSWORD}   # resolved from env by deploy.sh
+  database: solo
+  memoryLimit: 1024m
+  cpuLimit: "2.0"
+
+log:
+  maxSize: 20m
+  maxFile: "5"

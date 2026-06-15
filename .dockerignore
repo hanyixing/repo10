@@ -1,0 +1,32 @@
+# Keep the Docker build context small and free of secrets.
+# (The Dockerfile copies the whole context via `ADD . /tmp`.)
+
+# VCS & CI
+.git
+.gitignore
+.gitattributes
+.github
+
+# Build outputs (rebuilt inside the image)
+target
+solo_h2_test
+
+# Frontend deps (not needed by the Maven package build)
+node_modules
+
+# Local env / secrets — must never leak into an image
+.env
+.env.*
+*.local.yml
+application-*.local.yml
+
+# Runtime artefacts
+logs
+backups
+
+# Editor / IDE
+.idea
+*.iml
+.settings
+.classpath
+.project

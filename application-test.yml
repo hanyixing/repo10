@@ -1,0 +1,51 @@
+# =============================================================================
+# Solo - TEST environment configuration
+# -----------------------------------------------------------------------------
+# Source of truth for the `test` environment (CI / staging-like). Consumed by
+# ./deploy.sh. Uses an isolated `solo_test` database so it never touches dev or
+# prod data. Credentials here are NON-SENSITIVE test values, safe to commit.
+# Format: strict 2-level "section -> key: value" so deploy.sh can parse it.
+# =============================================================================
+
+server:
+  scheme: http
+  host: localhost
+  port: 8081                       # distinct host port to coexist with dev
+  runtimeMode: DEVELOPMENT
+
+database:
+  runtimeDb: MYSQL
+  driver: com.mysql.cj.jdbc.Driver
+  username: root
+  password: solo-test              # test-only credential, not a secret
+  host: mysql
+  port: 3306
+  name: solo_test
+  url: "jdbc:mysql://mysql:3306/solo_test?useUnicode=yes&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+  minConns: 5
+  maxConns: 10
+  tablePrefix: b3_solo
+
+jvm:
+  javaOpts: "-Xms256m -Xmx512m"
+
+logging:
+  level: DEBUG
+
+solo:
+  image: "b3log/solo:latest"
+  containerName: solo-test
+  memoryLimit: 512m
+  cpuLimit: "1.0"
+  restartPolicy: unless-stopped
+
+mysql:
+  image: "mysql:8.0"
+  rootPassword: solo-test
+  database: solo_test
+  memoryLimit: 512m
+  cpuLimit: "1.0"
+
+log:
+  maxSize: 10m
+  maxFile: "3"

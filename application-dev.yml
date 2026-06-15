@@ -1,0 +1,51 @@
+# =============================================================================
+# Solo - DEVELOPMENT environment configuration
+# -----------------------------------------------------------------------------
+# Source of truth for the `dev` environment. Consumed by ./deploy.sh, which
+# renders these values into a .env file that docker-compose.yml interpolates.
+# Values here are NON-SENSITIVE (local development only) and safe to commit.
+# Format: strict 2-level "section -> key: value" so deploy.sh can parse it.
+# =============================================================================
+
+server:
+  scheme: http
+  host: localhost
+  port: 8080                       # host port exposed to the browser
+  runtimeMode: DEVELOPMENT
+
+database:
+  runtimeDb: MYSQL
+  driver: com.mysql.cj.jdbc.Driver
+  username: root
+  password: solo-dev               # local-only credential, not a secret
+  host: mysql                      # docker-compose service name
+  port: 3306
+  name: solo
+  url: "jdbc:mysql://mysql:3306/solo?useUnicode=yes&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+  minConns: 5
+  maxConns: 10
+  tablePrefix: b3_solo
+
+jvm:
+  javaOpts: "-Xms256m -Xmx512m"
+
+logging:
+  level: DEBUG
+
+solo:
+  image: "b3log/solo:latest"
+  containerName: solo-dev
+  memoryLimit: 512m
+  cpuLimit: "1.0"
+  restartPolicy: unless-stopped
+
+mysql:
+  image: "mysql:8.0"
+  rootPassword: solo-dev
+  database: solo
+  memoryLimit: 512m
+  cpuLimit: "1.0"
+
+log:
+  maxSize: 10m
+  maxFile: "3"

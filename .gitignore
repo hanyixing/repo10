@@ -11,3 +11,15 @@ solo.iml
 /.settings/
 /.classpath
 /.project
+
+# --- Deployment / environment (sensitive — never commit) ---
+# Rendered env files may contain real secrets; only the template is tracked.
+.env
+.env.*
+!.env.example
+# Local-only overrides of the per-environment config templates.
+*.local.yml
+application-*.local.yml
+# Runtime artefacts produced by deploy.sh / docker-restart.sh.
+logs/
+backups/

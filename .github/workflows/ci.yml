@@ -3,17 +3,63 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
+    name: Build, quality check & coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v2
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
         with:
-          distribution: 'adopt'
+          distribution: 'temurin'
           java-version: '11'
           cache: 'maven'
+
       - name: Build with Maven
+        run: mvn clean install -DskipTests=true -Dmaven.javadoc.skip=true -B -V -Pci
+
+      - name: Code quality - license header check
+        run: mvn -B -Pci license:check
+
+      - name: Run tests with JaCoCo coverage
+        run: mvn -B -Pci test jacoco:report
+
+      - name: Publish coverage to Coveralls
+        run: mvn -B -Pci coveralls:report
+        continue-on-error: true
+
+      - name: Upload JaCoCo coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-report
+          path: target/site/jacoco
+          if-no-files-found: warn
+
+      - name: Coverage summary
+        if: always()
         run: |
-          mvn clean install -DskipTests=true -Dmaven.javadoc.skip=true -B -V -Pci
-          mvn clean test jacoco:report coveralls:report -Pci
+          report="target/site/jacoco/jacoco.csv"
+          if [[ -f "$report" ]]; then
+            echo "### JaCoCo coverage" >> "$GITHUB_STEP_SUMMARY"
+            awk -F, 'NR>1 {miss+=$4; cov+=$5} END {
+              total=miss+cov;
+              pct=(total>0)? (cov*100.0/total):0;
+              printf("Instruction coverage: %.2f%% (%d/%d)\n", pct, cov, total)
+            }' "$report" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No jacoco.csv found." >> "$GITHUB_STEP_SUMMARY"
+          fi
