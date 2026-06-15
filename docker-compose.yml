@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  solo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: b3log/solo:latest
+    container_name: solo
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - RUNTIME_DB=MYSQL
+      - JDBC_USERNAME=${JDBC_USERNAME:-root}
+      - JDBC_PASSWORD=${JDBC_PASSWORD:-solo_password}
+      - JDBC_DRIVER=com.mysql.cj.jdbc.Driver
+      - JDBC_URL=jdbc:mysql://mysql:3306/solo?useUnicode=yes&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      - JDBC_MIN_CONNS=5
+      - JDBC_MAX_CONNS=10
+      - JDBC_TABLE_PREFIX=b3_solo
+      - JAVA_OPTS=-Xms256m -Xmx512m -XX:+UseG1GC
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - solo-net
+    volumes:
+      - solo-logs:/opt/solo/logs
+    command: >
+      --listen_port=8080
+      --server_scheme=http
+      --server_host=localhost
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  mysql:
+    image: mysql:8.0
+    container_name: solo-mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${JDBC_PASSWORD:-solo_password}
+      - MYSQL_DATABASE=solo
+      - MYSQL_CHARACTER_SET_SERVER=utf8mb4
+      - MYSQL_COLLATION_SERVER=utf8mb4_unicode_ci
+    networks:
+      - solo-net
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: --default-authentication-plugin=mysql_native_password
+
+networks:
+  solo-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  solo-logs:

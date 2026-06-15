@@ -11,3 +11,18 @@ solo.iml
 /.settings/
 /.classpath
 /.project
+
+# Sensitive configuration files (contain DB credentials)
+src/main/resources/local.properties
+src/main/resources/local-dev.properties
+src/main/resources/local-prod.properties
+src/main/resources/latke-prod.properties
+
+# Environment and secrets files
+.env
+.env.*
+!.env.example
+
+# Deployment artifacts
+*.pid
+docker-compose.override.yml

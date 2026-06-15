@@ -429,6 +429,10 @@ public final class Server extends BaseServer {
         final BeanManager beanManager = BeanManager.getInstance();
         final StaticMidware staticMidware = beanManager.getReference(StaticMidware.class);
 
+        final HealthProcessor healthProcessor = beanManager.getReference(HealthProcessor.class);
+        final Dispatcher.RouterGroup healthGroup = Dispatcher.group();
+        healthGroup.get("/health", healthProcessor::health);
+
         final ArticleProcessor articleProcessor = beanManager.getReference(ArticleProcessor.class);
         final Dispatcher.RouterGroup articleGroup = Dispatcher.group();
         articleGroup.post("/console/markdown/2html", articleProcessor::markdown2HTML).

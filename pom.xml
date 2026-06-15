@@ -205,6 +205,12 @@
                     <exclude>etc/</exclude>
                     <exclude>lib/</exclude>
                     <exclude>docker/</exclude>
+                    <exclude>latke-dev.properties</exclude>
+                    <exclude>latke-test.properties</exclude>
+                    <exclude>latke-prod.properties</exclude>
+                    <exclude>local-dev.properties</exclude>
+                    <exclude>local-test.properties</exclude>
+                    <exclude>local-prod.properties</exclude>
                 </excludes>
             </resource>
         </resources>
@@ -340,6 +346,43 @@
                 </executions>
             </plugin>
 
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <configLocation>checkstyle.xml</configLocation>
+                    <encoding>UTF-8</encoding>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>false</failsOnError>
+                    <linkXRef>false</linkXRef>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>10.12.0</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>4.7.3.5</version>
+                <configuration>
+                    <effort>Medium</effort>
+                    <threshold>Medium</threshold>
+                    <failOnError>false</failOnError>
+                    <xmlOutput>true</xmlOutput>
+                </configuration>
+            </plugin>
+
             <!-- 需要打 jar 部署的话注释掉上面的配置，启用下面这段配置
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -394,6 +437,66 @@
                     <url>https://maven.aliyun.com/nexus/content/groups/public</url>
                 </pluginRepository>
             </pluginRepositories>
+        </profile>
+
+        <profile>
+            <id>test</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>use-test-config</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <copy file="src/main/resources/latke-test.properties"
+                                              tofile="${project.build.outputDirectory}/latke.properties"
+                                              overwrite="true"/>
+                                        <copy file="src/main/resources/local-test.properties"
+                                              tofile="${project.build.outputDirectory}/local.properties"
+                                              overwrite="true"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>prod</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>use-prod-config</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <copy file="src/main/resources/latke-prod.properties"
+                                              tofile="${project.build.outputDirectory}/latke.properties"
+                                              overwrite="true"/>
+                                        <copy file="src/main/resources/local-prod.properties"
+                                              tofile="${project.build.outputDirectory}/local.properties"
+                                              overwrite="true"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 

@@ -1,19 +1,73 @@
-name: Build Test
+name: CI
 on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master
+
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
+    name: Build & Test (Java 11)
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v2
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
         with:
-          distribution: 'adopt'
+          distribution: 'temurin'
           java-version: '11'
           cache: 'maven'
-      - name: Build with Maven
-        run: |
-          mvn clean install -DskipTests=true -Dmaven.javadoc.skip=true -B -V -Pci
-          mvn clean test jacoco:report coveralls:report -Pci
+
+      - name: Build
+        run: mvn clean install -DskipTests=true -Dmaven.javadoc.skip=true -B -V -Pci
+
+      - name: Run Tests with Coverage
+        run: mvn clean test jacoco:report -Pci
+
+      - name: Upload JaCoCo Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          retention-days: 30
+
+      - name: Coveralls Report
+        if: github.event_name == 'push'
+        run: mvn coveralls:report -Pci
+
+  code-quality:
+    runs-on: ubuntu-latest
+    name: Code Quality Checks
+    needs: build-and-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: 'maven'
+
+      - name: Build for quality checks
+        run: mvn clean compile -DskipTests=true -B -V -Pci
+
+      - name: Checkstyle
+        run: mvn checkstyle:check -Pci -B
+        continue-on-error: true
+
+      - name: SpotBugs
+        run: mvn spotbugs:check -Pci -B
+        continue-on-error: true
+
+      - name: Upload SpotBugs Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spotbugs-report
+          path: target/spotbugsXml.xml
+          retention-days: 30

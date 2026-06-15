@@ -66,6 +66,11 @@ public class InitCheckHandler implements Handler {
             return;
         }
 
+        if (StringUtils.startsWith(requestURI, Latkes.getContextPath() + "/health")) {
+            context.handle();
+            return;
+        }
+
         if (!initReported) {
             LOGGER.log(Level.DEBUG, "Solo has not been initialized, so redirects to /start");
             initReported = true;
